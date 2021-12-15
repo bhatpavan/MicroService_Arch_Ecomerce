@@ -32,6 +32,8 @@ namespace Catalog.API.Controllers
         [ProducesResponseType(200, Type = typeof(ShoppingCart))]
         public async Task<IActionResult> UpdateBasket([FromBody] ShoppingCart shopingCart)
         {
+            // communicate with Discount Grpc
+
             return Ok(await basketRepositary.UpdateBasket(shopingCart));
 
         }
