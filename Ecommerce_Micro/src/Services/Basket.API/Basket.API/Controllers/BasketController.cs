@@ -1,7 +1,9 @@
-﻿using Basket.API.Models;
+﻿using Basket.API.GrpcService;
+using Basket.API.Models;
 using Basket.API.Repository;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Catalog.API.Controllers
@@ -12,11 +14,13 @@ namespace Catalog.API.Controllers
     {
         private readonly IBasketRepository basketRepositary;
         private readonly ILogger<BasketController> logger;
+        private readonly DiscountGrpcService discountGrpcService;
 
-        public BasketController(IBasketRepository basketRepositary, ILogger<BasketController> logger)
+        public BasketController(IBasketRepository basketRepositary, ILogger<BasketController> logger, DiscountGrpcService discountGrpcService)
         {
             this.basketRepositary = basketRepositary;
             this.logger = logger;
+            this.discountGrpcService = discountGrpcService;
         }
 
         [ApiExplorerSettings(GroupName = "v1")]
@@ -30,11 +34,16 @@ namespace Catalog.API.Controllers
         [ApiExplorerSettings(GroupName = "v1")]
         [HttpPost("UpdateBasket")]
         [ProducesResponseType(200, Type = typeof(ShoppingCart))]
-        public async Task<IActionResult> UpdateBasket([FromBody] ShoppingCart shopingCart)
+        public async Task<IActionResult> UpdateBasket([FromBody] ShoppingCart shoppingCart)
         {
             // communicate with Discount Grpc
+            foreach(var item in shoppingCart.Items)
+            {
+                var coupon = await discountGrpcService.GetCoupon(item.ProductName);
+                item.Price -= coupon.Amount;
+            }
 
-            return Ok(await basketRepositary.UpdateBasket(shopingCart));
+            return Ok(await basketRepositary.UpdateBasket(shoppingCart));
 
         }
 
